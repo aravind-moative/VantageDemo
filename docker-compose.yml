@@ -1,0 +1,45 @@
+services:
+  neo4j:
+    image: neo4j:3.5.0
+    ports:
+      - "7474:7474"  # HTTP
+      - "7687:7687"  # Bolt
+    environment:
+      - NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PASSWORD}
+      - NEO4J_dbms_memory_pagecache_size=512M
+      - NEO4J_dbms_memory_heap_initial__size=512M
+      - NEO4J_dbms_memory_heap_max__size=512M
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
+      - NEO4J_dbms_security_procedures_allowlist=apoc.*
+    volumes:
+      - ./neo4j-data/data:/data
+      - ./neo4j-data/logs:/logs
+      - ./neo4j-dump:/dumps
+    networks:
+      - app-network
+    env_file:
+      - .env
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - NEO4J_URI=${NEO4J_URI}
+      - NEO4J_USER=${NEO4J_USER}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      - neo4j
+    networks:
+      - app-network
+    env_file:
+      - .env
+
+volumes:
+  neo4j_data:
+  neo4j_logs:
+
+networks:
+  app-network:
+    driver: bridge 
