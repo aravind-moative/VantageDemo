@@ -648,14 +648,14 @@
 
             <!-- Dynamic AUC vs AE plot container -->
             <div id="auc-plot-container">
-                {% for title, plot in plots %}
+            {% for title, plot in plots %}
                 {% if "AUC vs" in title %}
-                <div class="plot-card">
-                    <h4>{{ title }}</h4>
-                    <img src="data:image/png;base64,{{ plot }}" alt="{{ title }} Plot">
-                </div>
+            <div class="plot-card">
+                <h4>{{ title }}</h4>
+                <img src="data:image/png;base64,{{ plot }}" alt="{{ title }} Plot">
+            </div>
                 {% endif %}
-                {% endfor %}
+            {% endfor %}
             </div>
 
             <!-- Fixed Dose vs Cmax plot -->

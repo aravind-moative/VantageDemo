@@ -1,10 +1,19 @@
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+
+# Python environment
 .Python
 env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+neo4j-data/
+# Distribution / packaging
 build/
 develop-eggs/
 dist/
@@ -19,35 +28,6 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
-venv/
-
-# Docker
-.docker/
-docker-compose.override.yml
-
-# Environment variables
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Logs
-*.log
-logs/
-
-# Virtual Environment
-venv/
-env/
-ENV/
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-.DS_Store
 
 # Logs
 *.log
@@ -61,20 +41,33 @@ log/
 *.pid
 *.pid.*
 
-# Application specific
-instance/
-.webassets-cache
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Testing
 .coverage
 htmlcov/
 .pytest_cache/
 .mypy_cache/
 
-# Security
-*.pem
-*.key
-*.crt
-.env.local
-.env.*.local
+# Flask / FastAPI / Django
+instance/
+.webassets-cache
+
+# macOS
+.DS_Store
 
 # Temporary files
 *.tmp
