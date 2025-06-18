@@ -1,0 +1,121 @@
+[2025-06-18 04:57:04 +0000] [1375] [INFO] Starting gunicorn 23.0.0
+[2025-06-18 04:57:04 +0000] [1375] [INFO] Listening at: http://0.0.0.0:8000 (1375)
+[2025-06-18 04:57:04 +0000] [1375] [INFO] Using worker: uvicorn.workers.UvicornWorker
+[2025-06-18 04:57:04 +0000] [1376] [INFO] Booting worker with pid: 1376
+[2025-06-18 04:57:04 +0000] [1377] [INFO] Booting worker with pid: 1377
+[2025-06-18 04:57:04 +0000] [1378] [INFO] Booting worker with pid: 1378
+[2025-06-18 04:57:04 +0000] [1379] [INFO] Booting worker with pid: 1379
+[2025-06-18 04:57:08 +0000] [1378] [INFO] Started server process [1378]
+[2025-06-18 04:57:08 +0000] [1378] [INFO] Waiting for application startup.
+[2025-06-18 04:57:08 +0000] [1378] [INFO] Application startup complete.
+[2025-06-18 04:57:08 +0000] [1377] [INFO] Started server process [1377]
+[2025-06-18 04:57:08 +0000] [1377] [INFO] Waiting for application startup.
+[2025-06-18 04:57:08 +0000] [1377] [INFO] Application startup complete.
+[2025-06-18 04:57:08 +0000] [1376] [INFO] Started server process [1376]
+[2025-06-18 04:57:08 +0000] [1376] [INFO] Waiting for application startup.
+[2025-06-18 04:57:08 +0000] [1379] [INFO] Started server process [1379]
+[2025-06-18 04:57:08 +0000] [1379] [INFO] Waiting for application startup.
+[2025-06-18 04:57:08 +0000] [1376] [INFO] Application startup complete.
+[2025-06-18 04:57:08 +0000] [1379] [INFO] Application startup complete.
+[2025-06-18 05:20:05 +0000] [1375] [CRITICAL] WORKER TIMEOUT (pid:1376)
+[2025-06-18 05:20:06 +0000] [1375] [ERROR] Worker (pid:1376) was sent SIGKILL! Perhaps out of memory?
+[2025-06-18 05:20:06 +0000] [1525] [INFO] Booting worker with pid: 1525
+[2025-06-18 05:20:08 +0000] [1525] [INFO] Started server process [1525]
+[2025-06-18 05:20:08 +0000] [1525] [INFO] Waiting for application startup.
+[2025-06-18 05:20:08 +0000] [1525] [INFO] Application startup complete.
+[2025-06-18 05:20:47 +0000] [1375] [CRITICAL] WORKER TIMEOUT (pid:1379)
+[2025-06-18 05:20:48 +0000] [1375] [ERROR] Worker (pid:1379) was sent SIGKILL! Perhaps out of memory?
+[2025-06-18 05:20:48 +0000] [1540] [INFO] Booting worker with pid: 1540
+[2025-06-18 05:20:50 +0000] [1540] [INFO] Started server process [1540]
+[2025-06-18 05:20:50 +0000] [1540] [INFO] Waiting for application startup.
+[2025-06-18 05:20:50 +0000] [1540] [INFO] Application startup complete.
+[2025-06-18 05:53:12 +0000] [1375] [INFO] Handling signal: term
+[2025-06-18 05:53:12 +0000] [1378] [INFO] Shutting down
+[2025-06-18 05:53:12 +0000] [1540] [INFO] Shutting down
+[2025-06-18 05:53:12 +0000] [1377] [INFO] Shutting down
+[2025-06-18 05:53:12 +0000] [1525] [INFO] Shutting down
+[2025-06-18 05:53:12 +0000] [1378] [INFO] Finished server process [1378]
+[2025-06-18 05:53:12 +0000] [1378] [INFO] ASGI 'lifespan' protocol appears unsupported.
+[2025-06-18 05:53:12 +0000] [1378] [INFO] Worker exiting (pid: 1378)
+Generated Neo4j query: MATCH (adc:AntibodyDrugConjugate {name: 'Sacituzumab govitecan'})-[:HAS_COHORT]->(cohort:DosageCohort)-[r:HAS_AE]->(ae:AdverseEventTerm)
+RETURN ae.name AS AdverseEvent, r.patientPercentage AS PatientPercentage, r.patientCount AS PatientCount, r.grade AS Grade
+ORDER BY ae.name
+Generated Neo4j query: MATCH (adc1:AntibodyDrugConjugate)-[:HAS_COHORT]->(cohort:DosageCohort)<-[:HAS_COHORT]-(adc2:AntibodyDrugConjugate)
+WHERE adc1.name <> adc2.name
+RETURN adc1.name AS ADC_Name_1, adc2.name AS ADC_Name_2, cohort.name AS Shared_Cohort_Name
+ORDER BY cohort.name, adc1.name, adc2.name;
+[2025-06-18 05:53:12 +0000] [1540] [INFO] Finished server process [1540]
+[2025-06-18 05:53:12 +0000] [1525] [INFO] Finished server process [1525]
+[2025-06-18 05:53:12 +0000] [1540] [INFO] ASGI 'lifespan' protocol appears unsupported.
+[2025-06-18 05:53:12 +0000] [1525] [INFO] ASGI 'lifespan' protocol appears unsupported.
+[2025-06-18 05:53:12 +0000] [1540] [INFO] Worker exiting (pid: 1540)
+Generated Neo4j query: MATCH (adc:AntibodyDrugConjugate {name: 'Trastuzumab deruxtecan (DS-8201)'})-[:HAS_COHORT]->(cohort:DosageCohort)-[:HAS_CMAX]->(pk:PK_Observation)
+WHERE pk.analyte_component = 'Trastuzumab deruxtecan (DS-8201)'
+RETURN adc.name AS ADC_Name, cohort.name AS Dosage, toFloat(pk.value) AS Cmax_Value, pk.unit AS Unit
+ORDER BY toFloat(split(cohort.name, ' ')[0])
+Generated Neo4j query: MATCH (adc:AntibodyDrugConjugate {name: 'Sacituzumab govitecan'})-[:HAS_COHORT]->(cohort:DosageCohort)-[r:HAS_AE]->(ae:AdverseEventTerm)
+RETURN adc.name AS ADC_Name, ae.name AS Adverse_Event, r.patientPercentage AS Patient_Percentage, r.patientCount AS Patient_Count, r.grade AS Grade
+ORDER BY ae.name
+Generated Neo4j query: MATCH (adc:AntibodyDrugConjugate {name: 'Sacituzumab govitecan'})-[:HAS_COHORT]->(cohort:DosageCohort)-[r:HAS_AE]->(ae:AdverseEventTerm)
+RETURN adc.name AS ADC_Name, ae.name AS AdverseEvent, r.patientPercentage AS PatientPercentage, r.patientCount AS PatientCount, r.grade AS Grade
+ORDER BY ae.name
+Generated Neo4j query: MATCH (adc:AntibodyDrugConjugate)-[:HAS_COHORT]->(cohort:DosageCohort)-[:HAS_AUC]->(pk:PK_Observation)
+WHERE adc.name IN ['Trastuzumab emtansine', 'Polatuzumab vedotin'] AND pk.analyte_component = 'main ADC analyte'
+RETURN adc.name AS ADC_Name, cohort.name AS Cohort, pk.value AS AUC_Value, pk.unit AS Unit
+ORDER BY adc.name, cohort.name;
+Generated Neo4j query: MATCH (adc:AntibodyDrugConjugate)-[:HAS_COHORT]->(cohort:DosageCohort)-[:HAS_AUC]->(pk:PK_Observation)
+WHERE adc.name IN ['Trastuzumab emtansine', 'Polatuzumab vedotin'] AND pk.analyte_component = 'main ADC analyte'
+RETURN adc.name AS ADC_Name, cohort.name AS Cohort, pk.value AS AUC_Value, pk.unit AS Unit
+ORDER BY ADC_Name, Cohort;
+[2025-06-18 05:53:12 +0000] [1525] [INFO] Worker exiting (pid: 1525)
+Generated Neo4j query: MATCH (study:Study)-[:HAS_STUDY_PHASE]->(phase:StudyPhase)
+RETURN study.title AS StudyName, phase.name AS StudyPhase
+ORDER BY StudyName
+Generated Neo4j query: MATCH (adc:AntibodyDrugConjugate {name: 'Trastuzumab deruxtecan (DS-8201)'})-[:HAS_COHORT]->(cohort:DosageCohort)-[:HAS_CMAX]->(cmax:PK_Observation)
+WHERE cmax.analyte_component = 'Trastuzumab deruxtecan (DS-8201)'
+RETURN adc.name AS ADC_Name, cohort.name AS Dosage, cmax.value AS Cmax_Value, cmax.unit AS Unit
+ORDER BY toFloat(replace(cohort.name, 'mg', ''))
+Generated Neo4j query: MATCH (adc:AntibodyDrugConjugate {name: 'Sacituzumab govitecan'})-[:HAS_COHORT]->(cohort:DosageCohort)-[r:HAS_AE]->(ae:AdverseEventTerm)
+RETURN ae.name AS AdverseEvent, r.patientPercentage AS PatientPercentage, r.patientCount AS PatientCount, r.grade AS Grade
+ORDER BY ae.name
+Generated Neo4j query: MATCH (adc:AntibodyDrugConjugate)-[:HAS_COHORT]->(cohort:DosageCohort)
+WHERE NOT EXISTS((cohort)-[:HAS_AE]->(:AdverseEventTerm))
+RETURN adc.name AS ADC_Name, cohort.name AS Cohort_Name
+ORDER BY ADC_Name, Cohort_Name
+Generated Neo4j query: MATCH (adc:AntibodyDrugConjugate {name: 'Trastuzumab deruxtecan (DS-8201)'})-[:HAS_COHORT]->(cohort:DosageCohort)-[:HAS_CMAX]->(cmax:PK_Observation)
+WHERE cmax.analyte_component = 'Trastuzumab deruxtecan'
+WITH adc, cohort, cmax
+ORDER BY toFloat(split(cohort.name, ' ')[0])
+RETURN adc.name AS ADC_Name, cohort.name AS Dosage, cmax.value AS Cmax_Value, cmax.unit AS Unit
+Generated Neo4j query: MATCH (adc:AntibodyDrugConjugate)-[:HAS_COHORT]->(cohort:DosageCohort)-[:HAS_AUC]->(pk:PK_Observation)
+WHERE adc.name IN ['T-DM1', 'Polatuzumab vedotin'] AND pk.analyte_component = 'main ADC analyte'
+RETURN adc.name AS ADC_Name, cohort.name AS Cohort, pk.value AS AUC_Value, pk.unit AS Unit
+ORDER BY ADC_Name, Cohort;
+[2025-06-18 05:53:12 +0000] [1377] [INFO] Finished server process [1377]
+[2025-06-18 05:53:12 +0000] [1377] [INFO] ASGI 'lifespan' protocol appears unsupported.
+[2025-06-18 05:53:12 +0000] [1377] [INFO] Worker exiting (pid: 1377)
+Generated Neo4j query: MATCH (adc:AntibodyDrugConjugate)
+RETURN adc.name AS ADC_Name
+ORDER BY adc.name
+Generated Neo4j query: MATCH (adc:AntibodyDrugConjugate)-[:HAS_COHORT]->(cohort:DosageCohort)
+WHERE NOT EXISTS((cohort)-[:HAS_AE]->(:AdverseEventTerm))
+RETURN adc.name AS ADC_Name, cohort.name AS Cohort_Name
+ORDER BY ADC_Name, Cohort_Name
+Generated Neo4j query: MATCH (study:Study)-[:HAS_STUDY_PHASE]->(phase:StudyPhase)
+WHERE phase.name CONTAINS '11'
+RETURN count(DISTINCT study) AS StudyCount
+Generated Neo4j query: MATCH (study:Study)-[:HAS_STUDY_PHASE]->(phase:StudyPhase)
+WHERE phase.name CONTAINS 'II'
+RETURN count(DISTINCT study) AS StudyCount
+Generated Neo4j query: MATCH (adc:AntibodyDrugConjugate {name: 'Trastuzumab deruxtecan (DS-8201)'})-[:HAS_COHORT]->(cohort:DosageCohort)-[:HAS_CMAX]->(cmax:PK_Observation)
+WHERE cmax.analyte_component = 'Trastuzumab deruxtecan (DS-8201)'
+RETURN adc.name AS ADC_Name, cohort.name AS Dose, cmax.value AS Cmax_Value, cmax.unit AS Unit
+ORDER BY toFloat(split(cohort.name, ' ')[0])
+Generated Neo4j query: MATCH (adc:AntibodyDrugConjugate {name: 'Sacituzumab govitecan'})-[:HAS_COHORT]->(cohort:DosageCohort)-[r:HAS_AE]->(ae:AdverseEventTerm)
+RETURN adc.name AS ADC_Name, ae.name AS AdverseEvent, r.patientPercentage AS PatientPercentage, r.patientCount AS PatientCount, r.grade AS Grade
+ORDER BY ae.name
+Generated Neo4j query: MATCH (adc:AntibodyDrugConjugate)-[:HAS_COHORT]->(cohort:DosageCohort)-[r:HAS_AE]->(ae:AdverseEventTerm)
+WHERE ae.name = 'Nausea'
+RETURN adc.name AS ADC_Name, cohort.name AS Cohort_Dosage, r.grade AS Grade, r.patientPercentage AS Incidence, r.patientCount AS Patient_Count
+ORDER BY ADC_Name, Cohort_Dosage;
+[2025-06-18 05:53:15 +0000] [1375] [INFO] Shutting down: Master

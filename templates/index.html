@@ -638,7 +638,7 @@
         <div class="plots-container">
             <!-- Add AE selection dropdown -->
             <div class="ae-selector" style="margin-bottom: 20px; text-align: center;">
-                <label for="ae-select" style="color: white; margin-right: 10px;">AUC vs Adverse Event:</label>
+                <label for="ae-select" style="color: white; margin-right: 10px;">AUC (AUC to Infinity) vs Adverse Event:</label>
                 <select id="ae-select" style="padding: 8px; border-radius: 4px; border: none;">
                     {% for ae in available_aes %}
                     <option value="{{ ae }}" {% if ae == "Abdominal Discomfort" %}selected{% endif %}>{{ ae }}</option>
@@ -656,7 +656,7 @@
             </div>
                 {% endif %}
             {% endfor %}
-            </div>
+                <label for="ae-select" style="color: white; margin-right: 10px;">AUC (AUC to infinity) vs Adverse Event:</label>            </div>
 
             <!-- Fixed Dose vs Cmax plot -->
             <div id="cmax-plot-container">

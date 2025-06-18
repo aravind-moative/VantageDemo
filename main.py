@@ -465,6 +465,43 @@ WITH adc, cohort, toFloat(split(cohort.name, ' ')[0]) AS doseValue
 RETURN adc.name AS ADC, min(doseValue) AS FirstDoseForAE_Over10Percent
 ORDER BY ADC;
 
+// Q20: How does the Cmax of the ADC analyte change as the dose increases for Trastuzumab deruxtecan (DS-8201)?
+MATCH (adc:AntibodyDrugConjugate)-[:HAS_COHORT]->(cohort)-[:HAS_CMAX]->(pk:PK_Observation)
+WHERE adc.name CONTAINS 'Trastuzumab deruxtecan (DS-8201)' AND pk.analyte_component = 'ADC'
+RETURN
+    adc.name AS ADC,
+    cohort.name AS Cohort_Dose,
+    toFloat(pk.value) AS Cmax_Value
+ORDER BY Cmax_Value;
+
+// Q21: How does the AUC (Area Under the Curve) for the main ADC analyte compare between T-DM1 and Polatuzumab vedotin (pola)?
+MATCH (adc:AntibodyDrugConjugate)-[:HAS_COHORT]->(cohort)-[:HAS_AUC]->(pk:PK_Observation)
+WHERE adc.name IN ['Trastuzumab emtansine (T-DM1)', 'Polatuzumab vedotin (pola)'] AND pk.analyte_component = 'ADC'
+RETURN
+    adc.name AS ADC,
+    cohort.name AS Cohort_Dose,
+    pk.value AS AUC_Value,
+    pk.unit AS Unit
+ORDER BY ADC, toFloat(pk.value);
+
+// Q22: Give me all general AEs in ADC: Sacituzumab govitecan (SG, IMMU-132)
+MATCH (study:Study)-[:INVESTIGATES_ADC]->(adc:AntibodyDrugConjugate)
+WHERE adc.name CONTAINS 'Sacituzumab govitecan (SG, IMMU-132)'
+RETURN
+    adc.name AS ADC,
+    study.generalAEsMentioned AS General_Adverse_Events;
+
+// Q23: Analyze the AE profile for a drug based on its study phase
+MATCH (phase:StudyPhase)<-[:HAS_STUDY_PHASE]-(study:Study)-[:INVESTIGATES_ADC]->(adc:AntibodyDrugConjugate),
+      (study)-[:INCLUDES_COHORT]->(cohort:DosageCohort)-[r:HAS_AE]->(ae:AdverseEventTerm)
+WHERE r.patientPercentage IS NOT NULL AND r.patientPercentage <> 'NOT FOUND'
+RETURN
+    adc.name AS ADC,
+    phase.name AS StudyPhase,
+    ae.name AS AdverseEvent,
+    avg(toFloat(replace(r.patientPercentage, '%', ''))) AS AvgIncidenceInPhase
+ORDER BY ADC, AdverseEvent, StudyPhase;
+
     ```
 
 Question: {question}
