@@ -673,6 +673,23 @@
         table {
             padding: 0.3rem;
         }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #4a4a4a;
+            font-style: italic;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 20px;
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -1130,19 +1147,32 @@
         document.getElementById('ae-select').addEventListener('change', async function(e) {
             const selectedAE = e.target.value;
             try {
-                const response = await fetch(`/update-plot?ae=${encodeURIComponent(selectedAE)}`);
+                const response = await fetch(`/update-plot?ae=${encodeURIComponent(selectedAE)}&type=auc`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const data = await response.json();
+                
+                if (!data.plot_data) {
+                    throw new Error('No plot data received');
+                }
                 
                 // Update only the AUC plot container with the new plot
                 const aucPlotContainer = document.getElementById('auc-plot-container');
                 aucPlotContainer.innerHTML = `
                     <div class="plot-card">
                         <h4>AUC vs ${selectedAE}</h4>
-                        <img src="data:image/png;base64,${data.plot}" alt="AUC vs ${selectedAE} Plot">
+                        <img src="data:image/png;base64,${data.plot_data}" alt="AUC vs ${selectedAE} Plot">
                     </div>
                 `;
             } catch (error) {
                 console.error('Error updating plot:', error);
+                const aucPlotContainer = document.getElementById('auc-plot-container');
+                aucPlotContainer.innerHTML = `
+                    <div class="error">
+                        Error loading plot: ${error.message}
+                    </div>
+                `;
             }
         });
 
@@ -1151,34 +1181,29 @@
             const selectedUnit = e.target.value;
             try {
                 const response = await fetch(`/update-plot?unit=${encodeURIComponent(selectedUnit)}&type=cmax`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const data = await response.json();
+                
+                if (!data.plot_data) {
+                    throw new Error('No plot data received');
+                }
                 
                 // Update the Cmax plot container with the new plot
                 const cmaxPlotContainer = document.getElementById('cmax-plot-container');
                 const plotCard = cmaxPlotContainer.querySelector('.plot-card');
                 if (plotCard) {
-                    plotCard.querySelector('img').src = `data:image/png;base64,${data.plot}`;
+                    plotCard.querySelector('img').src = `data:image/png;base64,${data.plot_data}`;
                 }
             } catch (error) {
                 console.error('Error updating Cmax plot:', error);
-            }
-        });
-
-        document.getElementById('auc-unit-select').addEventListener('change', async function(e) {
-            const selectedUnit = e.target.value;
-            const selectedAE = document.getElementById('ae-select').value;
-            try {
-                const response = await fetch(`/update-plot?unit=${encodeURIComponent(selectedUnit)}&type=auc&ae=${encodeURIComponent(selectedAE)}`);
-                const data = await response.json();
-                
-                // Update the AUC plot container with the new plot
-                const aucPlotContainer = document.getElementById('auc-plot-container');
-                const plotCard = aucPlotContainer.querySelector('.plot-card');
-                if (plotCard) {
-                    plotCard.querySelector('img').src = `data:image/png;base64,${data.plot}`;
-                }
-            } catch (error) {
-                console.error('Error updating AUC plot:', error);
+                const cmaxPlotContainer = document.getElementById('cmax-plot-container');
+                cmaxPlotContainer.innerHTML = `
+                    <div class="error">
+                        Error loading plot: ${error.message}
+                    </div>
+                `;
             }
         });
 
@@ -1262,6 +1287,45 @@
         document.addEventListener('DOMContentLoaded', () => {
             displayDefaultQueries();
         });
+
+        async function updatePlot(ae) {
+            try {
+                const plotContainer = document.getElementById('dynamic-plot');
+                plotContainer.innerHTML = '<div class="loading">Loading plot...</div>';
+                
+                const response = await fetch(`/update-plot?ae=${encodeURIComponent(ae)}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                if (!data.plot_data) {
+                    throw new Error('No plot data received');
+                }
+                
+                // Create the plot
+                const plot = document.createElement('img');
+                plot.src = `data:image/png;base64,${data.plot_data}`;
+                plot.alt = `Plot for ${ae}`;
+                plot.style.width = '100%';
+                plot.style.height = 'auto';
+                
+                // Clear loading and add plot
+                plotContainer.innerHTML = '';
+                plotContainer.appendChild(plot);
+                
+            } catch (error) {
+                console.error('Error updating plot:', error);
+                const plotContainer = document.getElementById('dynamic-plot');
+                plotContainer.innerHTML = `<div class="error">Error loading plot: ${error.message}</div>`;
+            }
+        }
     </script>
 </body>
 </html>

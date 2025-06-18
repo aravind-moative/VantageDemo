@@ -650,7 +650,7 @@ async def update_plot(ae: str = None, unit: str = None, type: str = None):
             plot_base64 = base64.b64encode(buf.read()).decode('utf-8')
             plt.close(fig)
             
-            return JSONResponse({"plot": plot_base64})
+            return JSONResponse({"plot_data": plot_base64})
             
         elif type == 'auc' and ae:
             # Create AUC plot with selected unit and AE
@@ -658,22 +658,43 @@ async def update_plot(ae: str = None, unit: str = None, type: str = None):
             plotted_adcs = set()
             
             for entry in processed_data:
-                auc_data = next((pk for pk in entry['PK_Parameters'] if pk['parameter'] == 'AUC'), None)
-                ae_data = next((ae_item for ae_item in entry['Adverse_Events'] if ae_item['event'] == ae), None)
+                # Look for both AUC and AUCinf in PK parameters
+                auc_data = next((pk for pk in entry['PK_Parameters'] 
+                               if pk['parameter'] in ['AUC', 'AUCinf'] 
+                               and pk['analyte'] == 'ADC'), None)
                 
-                if auc_data and auc_data.get('value') and ae_data and ae_data['percent']:
+                ae_data = next((ae_item for ae_item in entry['Adverse_Events'] 
+                              if ae_item['event'] == ae), None)
+                
+                if auc_data and auc_data.get('value') and ae_data and ae_data.get('percent'):
                     try:
-                        auc_value = float(auc_data['value'])
+                        # Clean and convert AUC value
+                        auc_value = str(auc_data['value']).strip()
+                        if '(' in auc_value and ')' in auc_value:
+                            # Extract value from parentheses if present
+                            auc_value = auc_value.split('(')[-1].split(')')[0].strip()
+                        
+                        auc_value = float(auc_value)
+                        
+                        # Convert to selected unit
                         from_unit = auc_data.get('unit', 'µg*day/mL')
+                        if from_unit == 'NOT FOUND':
+                            from_unit = 'µg*day/mL'
                         auc_value = convert_unit(auc_value, from_unit, unit, 'AUC')
                         
-                        percent = float(ae_data['percent'].strip('%'))
+                        # Clean and convert percentage
+                        percent_str = str(ae_data['percent']).strip()
+                        if percent_str.endswith('%'):
+                            percent_str = percent_str[:-1]
+                        percent = float(percent_str)
+                        
                         normalized_name = entry['ADC_Name'].lower().strip()
                         color = adc_colors[normalized_name]
                         label = entry['ADC_Name'] if normalized_name not in plotted_adcs else None
                         ax.scatter(auc_value, percent, label=label, color=color)
                         plotted_adcs.add(normalized_name)
-                    except (ValueError, TypeError):
+                    except (ValueError, TypeError) as e:
+                        print(f"Error processing data point: {str(e)}")
                         continue
             
             if plotted_adcs:
@@ -689,13 +710,14 @@ async def update_plot(ae: str = None, unit: str = None, type: str = None):
                 plot_base64 = base64.b64encode(buf.read()).decode('utf-8')
                 plt.close(fig)
                 
-                return JSONResponse({"plot": plot_base64})
+                return JSONResponse({"plot_data": plot_base64})
             else:
                 raise HTTPException(status_code=404, detail="No data available for the selected AE")
         else:
             raise HTTPException(status_code=400, detail="Invalid request parameters")
             
     except Exception as e:
+        print(f"Error in update_plot: {str(e)}")  # Add logging
         raise HTTPException(status_code=500, detail=str(e))
 
 def create_auc_plot(data, selected_ae):
@@ -708,23 +730,43 @@ def create_auc_plot(data, selected_ae):
     plotted_adcs = set()
     
     for entry in data:
-        auc_data = next((pk for pk in entry['PK_Parameters'] if pk['parameter'] == 'AUC'), None)
-        ae = next((ae for ae in entry['Adverse_Events'] if ae['event'] == selected_ae), None)
+        # Look for both AUC and AUCinf in PK parameters
+        auc_data = next((pk for pk in entry['PK_Parameters'] 
+                        if pk['parameter'] in ['AUC', 'AUCinf'] 
+                        and pk['analyte'] == 'ADC'), None)
         
-        if auc_data and auc_data.get('value') and ae and ae['percent']:
+        ae = next((ae for ae in entry['Adverse_Events'] 
+                  if ae['event'] == selected_ae), None)
+        
+        if auc_data and auc_data.get('value') and ae and ae.get('percent'):
             try:
-                auc_value = float(auc_data['value'])
+                # Clean and convert AUC value
+                auc_value = str(auc_data['value']).strip()
+                if '(' in auc_value and ')' in auc_value:
+                    # Extract value from parentheses if present
+                    auc_value = auc_value.split('(')[-1].split(')')[0].strip()
+                
+                auc_value = float(auc_value)
+                
                 # Convert to default unit (µg*day/mL)
                 from_unit = auc_data.get('unit', 'µg*day/mL')
+                if from_unit == 'NOT FOUND':
+                    from_unit = 'µg*day/mL'
                 auc_value = convert_unit(auc_value, from_unit, 'µg*day/mL', 'AUC')
                 
-                percent = float(ae['percent'].strip('%'))
+                # Clean and convert percentage
+                percent_str = str(ae['percent']).strip()
+                if percent_str.endswith('%'):
+                    percent_str = percent_str[:-1]
+                percent = float(percent_str)
+                
                 normalized_name = entry['ADC_Name'].lower().strip()
                 color = adc_colors[normalized_name]
                 label = entry['ADC_Name'] if normalized_name not in plotted_adcs else None
                 ax.scatter(auc_value, percent, label=label, color=color)
                 plotted_adcs.add(normalized_name)
-            except (ValueError, TypeError):
+            except (ValueError, TypeError) as e:
+                print(f"Error processing data point: {str(e)}")
                 continue
     
     if plotted_adcs:  # Only add plot if we have data
@@ -733,6 +775,7 @@ def create_auc_plot(data, selected_ae):
         ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
         return (f'AUC vs {selected_ae}', plot_to_base64(fig))
+    
     plt.close(fig)
     return None
 
