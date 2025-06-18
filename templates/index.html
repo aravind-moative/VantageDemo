@@ -81,10 +81,6 @@
             background-color: #f8f9fa;
         }
 
-        tr:hover {
-            background-color: #f5f5f5;
-        }
-
         td:empty::before {
             content: "NA";
             color: #999;
@@ -127,9 +123,8 @@
         .plots-container {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 30px;
             margin-top: 30px;
-            background-color: #4a4a4a;
             padding: 20px;
             border-radius: 8px;
             align-items: center;
@@ -137,14 +132,25 @@
         }
 
         .plot-card {
-            background: white;
+            background-color: #4a4a4a;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             transition: transform 0.2s;
-            width: 70vw;
             max-width: 1200px;
             border: 1px solid #e0e0e0;
+            position: relative;
+            width: 80vw;
+        }
+
+        .plot-card:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background-color: white;
         }
 
         .plot-card h4 {
@@ -703,7 +709,17 @@
         <div class="logo-container">
             <img src="/static/logo.png" alt="Company Logo" class="logo" style="width: 200px; margin: 20px auto; display: block;">
         </div>
-        <h2>ADC PK & AE Analysis</h2>
+        <h2 style="font-size: 2rem;">ADC Analysis</h2>
+        <p style="margin-bottom: 0.53rem;"></pstyle>Research scientist working on ADC treatment can spend a week or more moving from literature search to a defensible answer on questions such as, "At 3 mg/kg, what neutropenia rate should we expect for a T‑DM1‑like ADC?" Our solution compresses that cycle to 24 hours without sacrificing scientific correctness and store information in a more meaningful way ie graph database. Our solution significantly reduces this timeframe to just 24 hours by actively building and structuring research data into a proprietary knowledge graph, ensuring both scientific rigor and unparalleled organization.</p>
+        <p style="margin-bottom: 3rem;">This platform support diverse query outputs, including tables, plots, and chatbots.</p>
+        <div class="adc-selector" style="margin: 10px; text-align: center;">
+            <label for="adc-select" style="color: black; margin-right: 10px;">Select ADC:</label>
+            <select id="adc-select" style="padding: 8px; border-radius: 4px; border: none;">
+                {% for adc in unique_adcs %}
+                <option value="{{ adc }}">{{ adc }}</option>
+                {% endfor %}
+            </select>
+        </div>
         <div class="table-container">
             <table>
                 <thead>
@@ -812,12 +828,13 @@
             </table>
         </div>
 
-        <h2>Pharmacokinetic Analysis</h2>
-        <div class="plots-container">
+         
+        <h2 style="font-size: 2rem; margin: 0;">Plots</h2>
+        <div class="plots-container">            
             <!-- Fixed Dose vs Cmax plot -->
             <div id="cmax-plot-container">
                 <div class="unit-selector" style="margin-bottom: 20px; text-align: center;">
-                    <label for="cmax-unit-select" style="color: white; margin-right: 10px;">Cmax Unit:</label>
+                    <label for="cmax-unit-select" style="color: black; margin-right: 10px;">Cmax Unit:</label>
                     <select id="cmax-unit-select" style="padding: 8px; border-radius: 4px; border: none;">
                         {% for unit in available_units.Cmax %}
                         <option value="{{ unit }}" {% if unit == 'µg/mL' %}selected{% endif %}>{{ unit }}</option>
@@ -833,17 +850,19 @@
                 {% endif %}
                 {% endfor %}
             </div>
-
             <!-- Add AE selection dropdown -->
-            <div class="ae-selector">
-                <label for="ae-select">AUC (AUC Inf) vs Adverse Event:</label>
+                         <hr style="border: none; height: 1rem; background-color: black;">
+             <p style="color: black; margin: 0;">In ADC research, the AUC vs. AE plot is critical for defining the exposure-safety relationship, linking total drug exposure (AUC) to the likelihood and severity of adverse events (AEs).
+This plot helps determine the "tipping point" where the total amount of drug the body experiences over time starts to cause more frequent or severe side effects.
+</p>
+            <div class="ae-selector" style="margin: 0;">
+                <label for="ae-select" style="color: black;">AUC (AUC Inf) vs Adverse Event:</label>
                 <select id="ae-select">
                     {% for ae in available_aes %}
                     <option value="{{ ae }}" {% if loop.first %}selected{% endif %}>{{ ae }}</option>
                     {% endfor %}
                 </select>
             </div>
-
             <!-- Dynamic AUC vs AE plot container -->
             <div id="auc-plot-container">
                 {% for title, plot in plots %}
@@ -872,21 +891,37 @@
             <button class="close-chat" onclick="toggleChat()">×</button>
         </div>
         <div class="chat-messages">
-            <div class="default-requests">
-                <button class="default-request-btn" id="default-req-one" onclick="sendDefaultRequest('List all ADCs and their main components', 'default-req-one')">
-                    🧪 List all ADCs and their main components<br>
-                    <small>Get a "bill of materials" for every drug in your database.</small>
-                </button>
+<div class="default-requests">
+    <button class="default-request-btn" id="default-req-one" onclick="sendDefaultRequest('List all the ADC names and their target antigen?', 'default-req-one')">
+        🧬 List all the ADC names and their target antigen<br>
+        <small>View each ADC along with its biological target.</small>
+    </button>
 
-                <button class="default-request-btn" id="default-req-two" onclick="sendDefaultRequest('Find the most common adverse events across all studies', 'default-req-two')">
-                    📈 Find the most common adverse events across all studies<br>
-                    <small>This helps identify the most frequently reported side effects in your dataset.</small>
-                </button>
+    <button class="default-request-btn" id="default-req-two" onclick="sendDefaultRequest('Find the most common adverse events across all studies.', 'default-req-two')">
+        📈 Find the most common adverse events across all studies<br>
+        <small>Identify frequently reported side effects.</small>
+    </button>
 
-                <button class="default-request-btn" id="default-req-three" onclick="sendDefaultRequest('Quickly identify cohorts where no adverse events were recorded.', 'default-req-three')">
-                    ⚠️ Quickly identify cohorts where no adverse events were recorded.<br>
-                </button>
-            </div>
+    <button class="default-request-btn" id="default-req-three" onclick="sendDefaultRequest('Get all the dosage cohorts across ADCs with Nausea as an AE.', 'default-req-three')">
+        💊 Get all dosage cohorts with Nausea as an AE<br>
+        <small>Filter cohorts where Nausea was reported.</small>
+    </button>
+
+    <button class="default-request-btn" id="default-req-four" onclick="sendDefaultRequest('Find all Dose-Limiting Toxicities (DLTs) for a ADC name: Trastuzumab emtansine (T-DM1)', 'default-req-four')">
+        🚫 Find all DLTs for Trastuzumab emtansine (T-DM1)<br>
+        <small>Explore critical toxicities at specific doses.</small>
+    </button>
+
+    <button class="default-request-btn" id="default-req-five" onclick="sendDefaultRequest('How does the Cmax of the ADC analyte change as the dose increases for Trastuzumab deruxtecan (DS-8201)', 'default-req-five')">
+        📊 Cmax vs Dose for Trastuzumab deruxtecan (DS-8201)<br>
+        <small>Understand exposure changes across dose levels.</small>
+    </button>
+
+    <button class="default-request-btn" id="default-req-six" onclick="sendDefaultRequest('How does the AUC (Area Under the Curve) for the main ADC analyte compared between Trastuzumab emtansine (T-DM1) and Polatuzumab vedotin (pola)', 'default-req-six')">
+        📉 Compare AUC of T-DM1 and Polatuzumab vedotin<br>
+        <small>Compare systemic exposure across drugs.</small>
+    </button>
+</div>
             <div class="placeholder-message">
                 Know more with our chatbot
             </div>
@@ -1326,6 +1361,36 @@
                 plotContainer.innerHTML = `<div class="error">Error loading plot: ${error.message}</div>`;
             }
         }
+
+        // Add ADC selection handler
+        document.getElementById('adc-select').addEventListener('change', function(e) {
+            const selectedADC = e.target.value;
+            const rows = document.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const adcCell = row.querySelector('td:first-child');
+                if (adcCell && adcCell.textContent === selectedADC) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        // Initialize table with first ADC selected
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstADC = document.getElementById('adc-select').value;
+            const rows = document.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const adcCell = row.querySelector('td:first-child');
+                if (adcCell && adcCell.textContent === firstADC) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
     </script>
 </body>
 </html>

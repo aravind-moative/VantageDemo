@@ -156,6 +156,7 @@ async def visualize_page():
     with driver.session() as session:
         result = session.run(CYPHER_QUERY)
         raw_data = [record.data() for record in result]
+        print(raw_data, "RAW DATA")
     
     # Process the data
     processed_data = []
@@ -215,6 +216,9 @@ async def visualize_page():
         
         processed_data.append(entry)
     
+    # Get unique ADC names
+    unique_adcs = sorted(list(set(entry['ADC_Name'] for entry in processed_data)))
+    
     # Generate plots
     plots = []
     
@@ -247,7 +251,8 @@ async def visualize_page():
         "data": processed_data,
         "plots": plots,
         "available_aes": available_aes,
-        "available_units": available_units
+        "available_units": available_units,
+        "unique_adcs": unique_adcs
     })
 
 def clean_cypher_query(query: str) -> str:
