@@ -6,8 +6,17 @@
     <title>ADC PK & AE Analysis</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Funnel+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Funnel Sans", sans-serif;
+        }
+
         :root {
-            --primary-color: #096B68;
+            --primary-color: #333333;
             --primary-light: rgba(9, 107, 104, 0.1);
             --text-color: #333;
             --background-color: white;
@@ -15,12 +24,11 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             margin: 0;
             padding: 20px;
-            background-color: var(--background-color);
-            color: var(--text-color);
+            background-color: #ffffff;
+            color: #333333;
         }
 
         .container {
@@ -30,14 +38,14 @@
         }
 
         h2 {
-            color: var(--primary-color);
-            border-bottom: 2px solid var(--primary-color);
+            color: #4a4a4a;
+            border-bottom: 2px solid #4a4a4a;
             padding-bottom: 10px;
             margin-top: 30px;
         }
 
         h4 {
-            color: var(--primary-color);
+            color: #4a4a4a;
             margin-bottom: 15px;
         }
 
@@ -50,22 +58,22 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            border: 1px solid var(--primary-color);
+            border: 1px solid #e0e0e0;
             font-size: 14px;
         }
 
         th {
-            background-color: var(--primary-color);
+            background-color: #4a4a4a;
             color: white;
             padding: 12px 8px;
             text-align: left;
-            border: 1px solid white;
+            border: 1px solid #ffffff;
             font-weight: 500;
         }
 
         td {
             padding: 8px;
-            border: 1px solid var(--border-color);
+            border: 1px solid #e0e0e0;
             vertical-align: top;
         }
 
@@ -74,7 +82,7 @@
         }
 
         tr:hover {
-            background-color: var(--primary-light);
+            background-color: #f5f5f5;
         }
 
         td:empty::before {
@@ -101,23 +109,19 @@
             z-index: 2;
         }
 
-        .pk-header {
-            background-color: var(--primary-color);
+        .pk-header, .ae-header {
+            background-color: #4a4a4a;
             text-align: center;
-        }
-
-        .ae-header {
-            background-color: var(--primary-color);
-            text-align: center;
-        }
-
-        /* Add new styles for specific header cells */
-        th.adc-name-header,
-        th.dosage-header,
-        th.tmax-adc-header,
-        th.tmax-payload-header {
-            background-color: var(--primary-color);
             color: white;
+        }
+
+        .ae-column {
+            background-color: #666666;
+            color: white;
+        }
+
+        .ae-cell {
+            background-color: #f8f9fa;
         }
 
         .plots-container {
@@ -125,10 +129,11 @@
             flex-direction: column;
             gap: 20px;
             margin-top: 30px;
-            background-color: var(--primary-color);
+            background-color: #4a4a4a;
             padding: 20px;
             border-radius: 8px;
             align-items: center;
+            border: 1px solid #e0e0e0;
         }
 
         .plot-card {
@@ -139,10 +144,11 @@
             transition: transform 0.2s;
             width: 70vw;
             max-width: 1200px;
+            border: 1px solid #e0e0e0;
         }
 
         .plot-card h4 {
-            color: var(--primary-color);
+            color: #4a4a4a;
             margin-bottom: 15px;
             font-size: 1.2em;
             text-align: center;
@@ -150,6 +156,7 @@
 
         .plot-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
         .plot-card img {
@@ -170,62 +177,55 @@
 
         .chat-button {
             position: fixed;
-            bottom: 30px;
-            right: 30px;
+            bottom: 20px;
+            right: 20px;
             background-color: var(--primary-color);
             color: white;
             border: none;
             border-radius: 50%;
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
             z-index: 1000;
         }
 
         .chat-button:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-        }
-
-        .chat-button:active {
-            transform: translateY(-1px) scale(0.98);
+            transform: scale(1.1);
+            background-color: #273538;
         }
 
         .chat-button svg {
             width: 24px;
             height: 24px;
-            fill: white;
+            fill: currentColor;
         }
 
         .chat-panel {
             position: fixed;
             top: 0;
-            right: -28%;
-            width: 28%;
+            right: -70%;
+            width: 70%;
             min-width: 300px;
             height: 100vh;
-            background: white;
-            box-shadow: -2px 0 8px rgba(0,0,0,0.1);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 999;
+            background-color: white;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            transition: right 0.3s ease;
+            z-index: 1001;
             display: flex;
             flex-direction: column;
-            border-left: 2px solid var(--primary-color);
-            visibility: hidden;
-            opacity: 0;
-            transform: translateX(20px);
         }
 
         .chat-panel.active {
             right: 0;
-            visibility: visible;
-            opacity: 1;
-            transform: translateX(0);
+        }
+
+        .chat-panel.active ~ .chat-button {
+            display: none;
         }
 
         .chat-header {
@@ -252,12 +252,12 @@
         }
 
         .chat-messages {
-            flex-grow: 1;
-            padding: 20px;
+            flex: 1;
             overflow-y: auto;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 0.7rem;
         }
 
         .default-requests {
@@ -283,54 +283,133 @@
         }
 
         .default-request-btn:hover {
-            background-color: #075a57;
+            background-color: #273538;;
         }
 
         .placeholder-message {
             text-align: center;
-            color: rgba(9, 107, 104, 0.5);
+            color: var(--primary-color);
             font-size: 1.1em;
             margin: auto;
             padding: 20px;
         }
 
-        .message {
-            margin: 10px 0;
-            padding: 15px;
-            border-radius: 10px;
-            max-width: 90%;
+        .chat-message {
+            padding: 8px 12px;
+            margin: 0;
+            border-radius: 8px;
+            max-width: 85%;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.4;
+            box-sizing: border-box;
         }
 
-        .user-message {
-            background-color: #e2e8f0;
+        .chat-message.user {
+            background-color: #4a4a4a;
+            color: white;
             margin-left: auto;
         }
 
-        .bot-message {
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
+        .chat-message.assistant {
+            background-color: #f5f5f5;
+            color: #4a4a4a;
+            margin-right: auto;
         }
 
-        .bot-message table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 10px 0;
+        .chat-message.assistant table {
+            background-color: white;
+            border: 1px solid #e0e0e0;
         }
 
-        .bot-message th, .bot-message td {
-            padding: 8px;
-            text-align: left;
-            border: 1px solid #e2e8f0;
+        .chat-message.assistant th {
+            background-color: #f0f0f0;
+            color: #4a4a4a;
+            font-weight: 600;
         }
 
-        .bot-message th {
-            background-color: #f1f5f9;
+        .chat-message.assistant td {
+            color: #4a4a4a;
         }
 
-        .bot-message ul {
-            margin: 10px 0;
+        .chat-message.assistant code {
+            background-color: #e8e8e8;
+            color: #4a4a4a;
+        }
+
+        .chat-message.assistant pre {
+            background-color: #e8e8e8;
+            color: #4a4a4a;
+        }
+
+        .chat-message br {
+            display: block;
+            content: "";
+            margin: 4px 0;
+        }
+
+        .chat-message ul {
+            margin: 4px 0;
             padding-left: 20px;
             list-style-type: disc;
+        }
+
+        .chat-message ul ul {
+            list-style-type: circle;
+            margin: 2px 0;
+        }
+
+        .chat-message ul ul ul {
+            list-style-type: square;
+        }
+
+        .chat-message ol {
+            margin: 4px 0;
+            padding-left: 20px;
+        }
+
+        .chat-message li {
+            margin: 2px 0;
+            padding-left: 4px;
+        }
+
+        .chat-message table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 8px 0;
+            background: white;
+            border-radius: 4px;
+            overflow-x: auto;
+            display: block;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        .chat-message th,
+        .chat-message td {
+            padding: 6px 8px;
+            border: 1px solid #e0e0e0;
+            text-align: left;
+            min-width: 80px;
+            max-width: 200px;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            box-sizing: border-box;
+        }
+
+        .chat-message th {
+            background-color: #f8f8f8;
+            font-weight: 600;
+        }
+
+        .chat-message p {
+            margin: 4px 0;
+        }
+
+        .chat-message strong {
+            font-weight: 600;
         }
 
         .section-header {
@@ -487,7 +566,7 @@
 
         /* Continuation row styling */
         .continuation-row td {
-            background-color: var(--primary-light);
+            background-color: #f5f5f5;
         }
 
         .continuation-row td[colspan="12"] {
@@ -495,47 +574,129 @@
             border-right: none;
         }
 
-        /* Empty cell styling */
-        td:empty::before {
-            content: "NA";
-            color: #999;
-        }
-
         /* Percentage styling */
         td:last-child:not(:empty) {
             font-weight: 500;
         }
 
-        .pk-header {
-            background-color: #006666;
-            color: white;
+        .ae-selector {
+            margin-bottom: 20px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
         }
-        .ae-header {
-            background-color: #006666;
-            color: white;
+
+        .ae-selector label {
+            color: #ffffff;
+            margin-right: 10px;
         }
-        .ae-column {
-            background-color: #008080;
-            color: white;
+
+        .ae-selector select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+            background-color: white;
+            color: #333333;
         }
-        .ae-cell {
-            background-color: #f0f8ff;
+
+        .ae-selector select:focus {
+            border-color: #4a4a4a;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(74, 74, 74, 0.2);
+        }
+
+        .logo-container {
+            margin-bottom: 20px;
+        }
+
+        .back-button {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            padding: 6px 12px;
+            background-color: #4a4a4a;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .back-button:hover {
+            background-color: #333333;
+            transform: translateX(-2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .back-button svg {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            width: auto;
+            text-align: right;
+            background-color: #4a4a4a;
+            color: white;
+            padding: 0.4rem;
+            border-radius: 0.3rem;
+        }
+
+        .bot-message {
+            align-self: flex-start;
+            padding: 0.4rem;
+            border-radius: 0.3rem;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .chat-message {
+                max-width: 90%;
+                font-size: 13px;
+                padding: 6px 10px;
+            }
+
+            .chat-message th,
+            .chat-message td {
+                padding: 4px 6px;
+                min-width: 60px;
+            }
+        }
+        table {
+            padding: 0.3rem;
         }
     </style>
 </head>
 <body class="bg-gray-100">
     <div class="container">
+        <a href="/" class="back-button">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+            </svg>
+            Back to Home
+        </a>
+        <div class="logo-container">
+            <img src="/static/logo.png" alt="Company Logo" class="logo" style="width: 200px; margin: 20px auto; display: block;">
+        </div>
         <h2>ADC PK & AE Analysis</h2>
         <div class="table-container">
             <table>
                 <thead>
-                    <tr style="background-color: #008080;">
+                    <tr style="background-color: #4a4a4a;">
                         <th rowspan="2">ADC Name</th>
                         <th rowspan="2">Dosage</th>
                         <th colspan="11" class="pk-header">PK Parameters</th>
                         <th colspan="4" class="ae-header">Adverse Events</th>
                     </tr>
-                    <tr style="background-color: #008080;">
+                    <tr style="background-color: #4a4a4a;">
                         <!-- PK Parameters -->
                         <th>Cmax<br>ADC</th>
                         <th>Tmax<br>ADC</th>
@@ -636,32 +797,40 @@
 
         <h2>Pharmacokinetic Analysis</h2>
         <div class="plots-container">
+            <!-- Fixed Dose vs Cmax plot -->
+            <div id="cmax-plot-container">
+                <div class="unit-selector" style="margin-bottom: 20px; text-align: center;">
+                    <label for="cmax-unit-select" style="color: white; margin-right: 10px;">Cmax Unit:</label>
+                    <select id="cmax-unit-select" style="padding: 8px; border-radius: 4px; border: none;">
+                        {% for unit in available_units.Cmax %}
+                        <option value="{{ unit }}" {% if unit == 'µg/mL' %}selected{% endif %}>{{ unit }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% for title, plot in plots %}
+                {% if "Dose vs Cmax" in title %}
+                <div class="plot-card">
+                    <h4>{{ title }}</h4>
+                    <img src="data:image/png;base64,{{ plot }}" alt="{{ title }} Plot">
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+
             <!-- Add AE selection dropdown -->
-            <div class="ae-selector" style="margin-bottom: 20px; text-align: center;">
-                <label for="ae-select" style="color: white; margin-right: 10px;">AUC (AUC to Infinity) vs Adverse Event:</label>
-                <select id="ae-select" style="padding: 8px; border-radius: 4px; border: none;">
+            <div class="ae-selector">
+                <label for="ae-select">AUC (AUC Inf) vs Adverse Event:</label>
+                <select id="ae-select">
                     {% for ae in available_aes %}
-                    <option value="{{ ae }}" {% if ae == "Abdominal Discomfort" %}selected{% endif %}>{{ ae }}</option>
+                    <option value="{{ ae }}" {% if loop.first %}selected{% endif %}>{{ ae }}</option>
                     {% endfor %}
                 </select>
             </div>
 
             <!-- Dynamic AUC vs AE plot container -->
             <div id="auc-plot-container">
-            {% for title, plot in plots %}
-                {% if "AUC vs" in title %}
-            <div class="plot-card">
-                <h4>{{ title }}</h4>
-                <img src="data:image/png;base64,{{ plot }}" alt="{{ title }} Plot">
-            </div>
-                {% endif %}
-            {% endfor %}
-                <label for="ae-select" style="color: white; margin-right: 10px;">AUC (AUC to infinity) vs Adverse Event:</label>            </div>
-
-            <!-- Fixed Dose vs Cmax plot -->
-            <div id="cmax-plot-container">
                 {% for title, plot in plots %}
-                {% if "Dose vs Cmax" in title %}
+                {% if "AUC vs" in title %}
                 <div class="plot-card">
                     <h4>{{ title }}</h4>
                     <img src="data:image/png;base64,{{ plot }}" alt="{{ title }} Plot">
@@ -687,17 +856,17 @@
         </div>
         <div class="chat-messages">
             <div class="default-requests">
-                <button class="default-request-btn" onclick="sendDefaultRequest('List all ADCs and their main components')">
+                <button class="default-request-btn" id="default-req-one" onclick="sendDefaultRequest('List all ADCs and their main components', 'default-req-one')">
                     🧪 List all ADCs and their main components<br>
                     <small>Get a "bill of materials" for every drug in your database.</small>
                 </button>
 
-                <button class="default-request-btn" onclick="sendDefaultRequest('Find the most common adverse events across all studies')">
+                <button class="default-request-btn" id="default-req-two" onclick="sendDefaultRequest('Find the most common adverse events across all studies', 'default-req-two')">
                     📈 Find the most common adverse events across all studies<br>
                     <small>This helps identify the most frequently reported side effects in your dataset.</small>
                 </button>
 
-                <button class="default-request-btn" onclick="sendDefaultRequest('Quickly identify cohorts where no adverse events were recorded.')">
+                <button class="default-request-btn" id="default-req-three" onclick="sendDefaultRequest('Quickly identify cohorts where no adverse events were recorded.', 'default-req-three')">
                     ⚠️ Quickly identify cohorts where no adverse events were recorded.<br>
                 </button>
             </div>
@@ -779,18 +948,18 @@
                     
                     if (data.results && data.results.length > 0) {
                         const result = data.results[0];
-                        console.log('Result:', result); // Debug log
-                        
+                        console.log(result, result.type);
                         if (result.type === 'error') {
                             displayMessage(result.message, 'error');
                         } else if (result.insights) {
+                            console.log("INSIGHTS");
                             displayMessage(result.insights, 'insights');
                         } else if (result.message) {
+                            console.log("MESSAGE");
                             displayMessage(result.message, 'bot');
                         } else {
-                            // Format the raw data into a readable message
-                            const formattedMessage = formatDataToReadable(result);
-                            displayMessage(formattedMessage, 'bot');
+                            displayMessage(result, 'bot');
+                            console.log(result, "RESULT HERE");
                         }
                     } else {
                         displayMessage('No results found', 'error');
@@ -858,40 +1027,7 @@
             content.className = 'message-content';
             
             // Convert markdown to HTML
-            let formattedMessage = message
-                // Tables
-                .replace(/\|([^|\n]+)\|/g, (match, content) => {
-                    const cells = content.split('|').map(cell => cell.trim());
-                    return `<tr>${cells.map(cell => `<td>${cell}</td>`).join('')}</tr>`;
-                })
-                .replace(/\n\|[- |]+\|\n/g, '')  // Remove table header separator
-                .replace(/\n\|/g, '\n<table><tr>')
-                .replace(/\|\n/g, '</tr></table>\n')
-                
-                // Headers
-                .replace(/### (.*?)\n/g, '<h3>$1</h3>\n')
-                .replace(/## (.*?)\n/g, '<h2>$1</h2>\n')
-                .replace(/# (.*?)\n/g, '<h1>$1</h1>\n')
-                
-                // Bold
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                
-                // Lists
-                .replace(/^\s*[-*]\s+(.+)$/gm, '<li>$1</li>')
-                .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
-                .replace(/^\s*\d+\.\s+(.+)$/gm, '<li>$1</li>')
-                .replace(/(<li>.*<\/li>\n?)+/g, '<ol>$&</ol>')
-                
-                // Code blocks
-                .replace(/```(\w+)?\n([\s\S]*?)\n```/g, '<pre><code>$2</code></pre>')
-                .replace(/`([^`]+)`/g, '<code>$1</code>')
-                
-                // Blockquotes
-                .replace(/^\s*>\s+(.+)$/gm, '<blockquote>$1</blockquote>')
-                
-                // Line breaks
-                .replace(/\n/g, '<br>');
-            
+           let formattedMessage = message.replace(/```html\n?/g, '').replace(/```/g, '');
             content.innerHTML = formattedMessage;
             messageDiv.appendChild(content);
             
@@ -914,7 +1050,8 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        function sendDefaultRequest(question) {
+        function sendDefaultRequest(question, id) {
+            document.getElementById(id).style.display = 'none';
             const input = document.getElementById('user-input');
             input.value = question;
             sendMessage();
@@ -1007,6 +1144,123 @@
             } catch (error) {
                 console.error('Error updating plot:', error);
             }
+        });
+
+        // Add event listeners for unit selection
+        document.getElementById('cmax-unit-select').addEventListener('change', async function(e) {
+            const selectedUnit = e.target.value;
+            try {
+                const response = await fetch(`/update-plot?unit=${encodeURIComponent(selectedUnit)}&type=cmax`);
+                const data = await response.json();
+                
+                // Update the Cmax plot container with the new plot
+                const cmaxPlotContainer = document.getElementById('cmax-plot-container');
+                const plotCard = cmaxPlotContainer.querySelector('.plot-card');
+                if (plotCard) {
+                    plotCard.querySelector('img').src = `data:image/png;base64,${data.plot}`;
+                }
+            } catch (error) {
+                console.error('Error updating Cmax plot:', error);
+            }
+        });
+
+        document.getElementById('auc-unit-select').addEventListener('change', async function(e) {
+            const selectedUnit = e.target.value;
+            const selectedAE = document.getElementById('ae-select').value;
+            try {
+                const response = await fetch(`/update-plot?unit=${encodeURIComponent(selectedUnit)}&type=auc&ae=${encodeURIComponent(selectedAE)}`);
+                const data = await response.json();
+                
+                // Update the AUC plot container with the new plot
+                const aucPlotContainer = document.getElementById('auc-plot-container');
+                const plotCard = aucPlotContainer.querySelector('.plot-card');
+                if (plotCard) {
+                    plotCard.querySelector('img').src = `data:image/png;base64,${data.plot}`;
+                }
+            } catch (error) {
+                console.error('Error updating AUC plot:', error);
+            }
+        });
+
+        function addMessage(content, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${isUser ? 'user' : 'assistant'}`;
+            
+            // Check if content contains HTML tags
+            const hasHtml = /<[a-z][\s\S]*>/i.test(content);
+            
+            if (hasHtml) {
+                // For HTML content, use innerHTML
+                messageDiv.innerHTML = content;
+            } else {
+                // For plain text, use textContent
+                messageDiv.textContent = content;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function displayDefaultQueries() {
+            const defaultQueries = [
+                "What are the most common adverse events?",
+                "Show me the relationship between dose and exposure",
+                "What are the key safety findings?",
+                "Analyze the efficacy data"
+            ];
+
+            const queriesDiv = document.createElement('div');
+            queriesDiv.className = 'default-queries';
+            queriesDiv.style.display = 'flex';
+            queriesDiv.style.flexDirection = 'column';
+            queriesDiv.style.gap = '8px';
+            queriesDiv.style.marginTop = '10px';
+
+            defaultQueries.forEach(query => {
+                const button = document.createElement('button');
+                button.textContent = query;
+                button.className = 'default-query-btn';
+                button.style.padding = '8px 12px';
+                button.style.backgroundColor = '#f5f5f5';
+                button.style.border = '1px solid #e0e0e0';
+                button.style.borderRadius = '4px';
+                button.style.cursor = 'pointer';
+                button.style.textAlign = 'left';
+                button.style.transition = 'all 0.2s ease';
+                button.style.color = '#4a4a4a';
+
+                button.addEventListener('mouseover', () => {
+                    button.style.backgroundColor = '#e8e8e8';
+                });
+
+                button.addEventListener('mouseout', () => {
+                    button.style.backgroundColor = '#f5f5f5';
+                });
+
+                button.addEventListener('click', () => {
+                    messageInput.value = query;
+                    sendMessage();
+                    // Hide all default queries
+                    const queriesContainer = document.querySelector('.default-queries');
+                    if (queriesContainer) {
+                        queriesContainer.style.display = 'none';
+                    }
+                });
+
+                queriesDiv.appendChild(button);
+            });
+
+            chatMessages.appendChild(queriesDiv);
+        }
+
+        function clearChat() {
+            chatMessages.innerHTML = '';
+            displayDefaultQueries(); // Show default queries again when chat is cleared
+        }
+
+        // Show default queries when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            displayDefaultQueries();
         });
     </script>
 </body>

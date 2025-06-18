@@ -101,6 +101,42 @@ ORDER BY
     ADC_Name, Dosage
 """
 
+# Unit conversion factors
+UNIT_CONVERSIONS = {
+    'Cmax': {
+        'µg/mL': 1.0,
+        'mg/mL': 1000.0,
+        'ng/mL': 0.001,
+        'g/L': 1.0
+    },
+    'AUC': {
+        'µg*day/mL': 1.0,
+        'mg*day/mL': 1000.0,
+        'ng*day/mL': 0.001,
+        'g*day/L': 1.0
+    }
+}
+
+def convert_unit(value: float, from_unit: str, to_unit: str, param_type: str) -> float:
+    """Convert a value from one unit to another for a given parameter type."""
+    if from_unit == to_unit:
+        return value
+    
+    if param_type not in UNIT_CONVERSIONS:
+        return value
+    
+    conversions = UNIT_CONVERSIONS[param_type]
+    if from_unit not in conversions or to_unit not in conversions:
+        return value
+    
+    # Convert to base unit first, then to target unit
+    base_value = value / conversions[from_unit]
+    return base_value * conversions[to_unit]
+
+def get_available_units(param_type: str) -> List[str]:
+    """Get list of available units for a parameter type."""
+    return list(UNIT_CONVERSIONS.get(param_type, {}).keys())
+
 def plot_to_base64(fig):
     """Convert a matplotlib figure to a base64-encoded string"""
     buf = io.BytesIO()
@@ -110,173 +146,109 @@ def plot_to_base64(fig):
     plt.close(fig)
     return img_str
 
-@app.get("/", response_class=HTMLResponse)
-async def render_pk_table(request: Request):
-    try:
-        with driver.session() as session:
-            result = session.run(CYPHER_QUERY)
-            raw_data = [record.data() for record in result]
+@app.get("/")
+async def landing_page():
+    return templates.TemplateResponse("landing.html", {"request": {}})
 
-        # Normalize ADC names (case-insensitive)
-        adc_name_map = {}
-        for row in raw_data:
-            original_name = row['ADC_Name']
-            normalized_name = original_name.lower().strip()
-            if normalized_name not in adc_name_map:
-                adc_name_map[normalized_name] = original_name
-
-        processed_data = []
-        for row in raw_data:
-            entry = {
-                'ADC_Name': row['ADC_Name'],
-                'Dosage': row['Dosage'],
-                'PK_Parameters': [],  # Changed to list to match template structure
-                'Adverse_Events': []
-            }
-            
-            # Process PK data
-            pk_data_mapping = {
-                'CMAX_Data': 'Cmax',
-                'TMAX_Data': 'Tmax',
-                'AUC_Data': 'AUC',
-                'AUCLAST_Data': 'AUClast',
-                'THALF_Data': 'Thalf'
-            }
-            
-            # Process each PK parameter type
-            for raw_key, param_name in pk_data_mapping.items():
-                if raw_key in row and isinstance(row[raw_key], list):
-                    for pk_item in row[raw_key]:
-                        if isinstance(pk_item, dict):
-                            value = pk_item.get('value', '')
-                            
-                            # Handle special cases where value contains multiple measurements
-                            if isinstance(value, str) and '(' in value and ')' in value:
-                                if 'AUCinf' in value:
-                                    value = value.split('AUCinf)')[0].split('(')[-1].strip()
-                                elif 'AUClast' in value:
-                                    value = value.split('AUClast)')[0].split('(')[-1].strip()
-                            
-                            # Only add if we have valid data
-                            if value and value != 'NOT FOUND':
-                                entry['PK_Parameters'].append({
-                                    'parameter': param_name,
-                                    'analyte': pk_item.get('analyte', ''),
-                                    'value': value,
-                                    'unit': pk_item.get('unit', '') if pk_item.get('unit') != 'NOT FOUND' else ''
-                                })
-            
-            # Process adverse events
-            if isinstance(row.get('Adverse_Events'), list):
-                for ae in row['Adverse_Events']:
-                    if isinstance(ae, dict):
-                        event = ae.get('event', '')
-                        if event and event != 'NOT FOUND':
-                            entry['Adverse_Events'].append({
-                                'event': event,
-                                'grade': ae.get('grade', 'NOT FOUND'),
-                                'count': ae.get('count', 'NOT FOUND'),
-                                'percent': ae.get('percent', 'NOT FOUND'),
-                                'related': ae.get('related', 'NOT FOUND')
+@app.get("/visualize")
+async def visualize_page():
+    # Fetch data from Neo4j
+    with driver.session() as session:
+        result = session.run(CYPHER_QUERY)
+        raw_data = [record.data() for record in result]
+    
+    # Process the data
+    processed_data = []
+    for row in raw_data:
+        entry = {
+            'ADC_Name': row['ADC_Name'],
+            'Dosage': row['Dosage'],
+            'PK_Parameters': [],  # Initialize as empty list
+            'Adverse_Events': []  # Initialize as empty list
+        }
+        
+        # Process PK data
+        pk_data_mapping = {
+            'CMAX_Data': 'Cmax',
+            'TMAX_Data': 'Tmax',
+            'AUC_Data': 'AUC',
+            'AUCLAST_Data': 'AUClast',
+            'THALF_Data': 'Thalf'
+        }
+        
+        # Process each PK parameter type
+        for raw_key, param_name in pk_data_mapping.items():
+            if raw_key in row and isinstance(row[raw_key], list):
+                for pk_item in row[raw_key]:
+                    if isinstance(pk_item, dict):
+                        value = pk_item.get('value', '')
+                        
+                        # Handle special cases where value contains multiple measurements
+                        if isinstance(value, str) and '(' in value and ')' in value:
+                            if 'AUCinf' in value:
+                                value = value.split('AUCinf)')[0].split('(')[-1].strip()
+                            elif 'AUClast' in value:
+                                value = value.split('AUClast)')[0].split('(')[-1].strip()
+                        
+                        # Only add if we have valid data
+                        if value and value != 'NOT FOUND':
+                            entry['PK_Parameters'].append({
+                                'parameter': param_name,
+                                'analyte': pk_item.get('analyte', ''),
+                                'value': value,
+                                'unit': pk_item.get('unit', '') if pk_item.get('unit') != 'NOT FOUND' else ''
+                            })
+        
+        # Process adverse events
+        if isinstance(row.get('Adverse_Events'), list):
+            for ae in row['Adverse_Events']:
+                if isinstance(ae, dict):
+                    event = ae.get('event', '')
+                    if event and event != 'NOT FOUND':
+                        entry['Adverse_Events'].append({
+                            'event': event,
+                            'grade': ae.get('grade', 'NOT FOUND'),
+                            'count': ae.get('count', 'NOT FOUND'),
+                            'percent': ae.get('percent', 'NOT FOUND'),
+                            'related': ae.get('related', 'NOT FOUND')
                         })
-            
-            processed_data.append(entry)
-
-        # Create plots
-        plots = []
-        available_aes = set()
-
-        # Get unique ADC names for consistent colors (using normalized names)
-        unique_adcs = list(set(entry['ADC_Name'].lower().strip() for entry in processed_data))
-        colors = plt.cm.Set3(np.linspace(0, 1, len(unique_adcs)))
-        adc_colors = dict(zip(unique_adcs, colors))
-
-        if processed_data:
-            # Plot 1: Dose vs Cmax (always first)
-            fig1, ax1 = plt.subplots(figsize=(10, 6))
-            plotted_adcs = set()
-            
-            for entry in processed_data:
-                try:
-                    dose = float(entry['Dosage'].split()[0])  # Extract first number from dosage
-                    cmax_data = entry['PK_Parameters'][0] if isinstance(entry['PK_Parameters'], list) and len(entry['PK_Parameters']) > 0 else None
-                    if cmax_data and cmax_data.get('value'):
-                        cmax_value = float(cmax_data['value'])
-                        normalized_name = entry['ADC_Name'].lower().strip()
-                        color = adc_colors[normalized_name]
-                        label = entry['ADC_Name'] if normalized_name not in plotted_adcs else None
-                        ax1.scatter(dose, cmax_value, label=label, color=color)
-                        plotted_adcs.add(normalized_name)
-                except (ValueError, TypeError, IndexError):
-                    continue
-            
-            ax1.set_xlabel('Dose (mg/kg)')
-            ax1.set_ylabel('Cmax (µg/mL)')
-            ax1.set_title('Dose vs Cmax')
-            ax1.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-            plt.tight_layout()
-            plots.append(('Dose vs Cmax', plot_to_base64(fig1)))
-            plt.close(fig1)
-
-            # Find all unique AE events that have AUC data
-            for entry in processed_data:
-                auc_data = entry['PK_Parameters'][0] if isinstance(entry['PK_Parameters'], list) and len(entry['PK_Parameters']) > 0 else None
-                if auc_data and auc_data.get('value'):
-                    for ae in entry['Adverse_Events']:
-                        if ae['percent'] and ae['percent'] != 'NOT FOUND':
-                            available_aes.add(ae['event'])
-
-            # Create plot for AUC vs Abdominal Discomfort by default
-            default_ae = "Abdominal Discomfort"
-            if default_ae in available_aes:
-                fig, ax = plt.subplots(figsize=(10, 6))
-                plotted_adcs = set()
-                
-                for entry in processed_data:
-                    auc_data = entry['PK_Parameters'][0] if isinstance(entry['PK_Parameters'], list) and len(entry['PK_Parameters']) > 0 else None
-                    ae = next((ae for ae in entry['Adverse_Events'] if ae['event'] == default_ae), None)
-                    
-                    if auc_data and auc_data.get('value') and ae and ae['percent']:
-                        try:
-                            auc_value = float(auc_data['value'])
-                            percent = float(ae['percent'].strip('%'))
-                            normalized_name = entry['ADC_Name'].lower().strip()
-                            color = adc_colors[normalized_name]
-                            label = entry['ADC_Name'] if normalized_name not in plotted_adcs else None
-                            ax.scatter(auc_value, percent, label=label, color=color)
-                            plotted_adcs.add(normalized_name)
-                        except (ValueError, TypeError):
-                            continue
-                
-                if plotted_adcs:  # Only add plot if we have data
-                    ax.set_xlabel('AUC (µg*day/mL)')
-                    ax.set_ylabel(f'{default_ae} (%)')
-                    ax.set_title(f'AUC vs {default_ae}')
-                    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-                    plt.tight_layout()
-                    plots.append((f'AUC vs {default_ae}', plot_to_base64(fig)))
-                plt.close(fig)
-
-        return templates.TemplateResponse(
-            "index.html",
-            {
-                "request": request,
-                "data": processed_data,
-                "plots": plots,  # List of (title, base64_image) tuples
-                "available_aes": sorted(list(available_aes))  # List of available AEs for dropdown
-            }
-        )
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        return templates.TemplateResponse(
-            "index.html",
-            {
-                "request": request,
-                "data": [],
-                "plots": [],
-                "error": str(e)
-            }
-        )
+        
+        processed_data.append(entry)
+    
+    # Generate plots
+    plots = []
+    
+    # Get all unique adverse events that have AUC data
+    available_aes = set()
+    for record in processed_data:
+        for ae in record['Adverse_Events']:
+            if any(param['parameter'] == 'AUC' for param in record['PK_Parameters']):
+                available_aes.add(ae['event'])
+    
+    # Sort the list of available AEs
+    available_aes = sorted(list(available_aes))
+    
+    # Create plot for first available AE by default
+    if available_aes:
+        default_ae = available_aes[0]
+        plots.append(create_auc_plot(processed_data, default_ae))
+    
+    # Create Dose vs Cmax plot
+    plots.append(create_dose_cmax_plot(processed_data))
+    
+    # Get available units for each parameter type
+    available_units = {
+        'Cmax': get_available_units('Cmax'),
+        'AUC': get_available_units('AUC')
+    }
+    
+    return templates.TemplateResponse("index.html", {
+        "request": {},
+        "data": processed_data,
+        "plots": plots,
+        "available_aes": available_aes,
+        "available_units": available_units
+    })
 
 def clean_cypher_query(query: str) -> str:
     """Clean the Cypher query by removing markdown formatting."""
@@ -522,43 +494,39 @@ def analyze_neo4j_results(results: List[Dict], question: str) -> str:
     """Analyze Neo4j results and generate user-friendly response using LLM."""
     results_str = json.dumps(results, indent=2)
     
-    prompt = f"""You are a friendly and helpful research assistant named Vantage. 
-
+    # Step 2: Generate response using LLM
+    prompt = f"""
+You are a friendly and helpful research assistant named <strong>Vantage</strong>. Your task is to provide clear, structured, and visually rich answers using proper HTML formatting wherever appropriate.
 Original Question: {question}
-
 These are the answers for the question:
 {results_str}
-
-Please provide a response following this exact structure:
-
-🔍 **Summary**
-[1-2 sentences maximum introducing what you found]
-
-📊 **Data Overview**
-[Present data in a clean markdown table format]
-| Column 1 | Column 2 |
-|----------|----------|
-| Value 1  | Value 2  |
-
-⚡ **Key Findings**
-- Point 1
-- Point 2
-- Point 3 [maximum 3 bullet points]
-
-Style Rules:
-1. Keep it concise - no redundant information
-2. Use tables instead of lists where possible
-3. No extra line breaks between sections
-4. Maximum 3 bullet points per section
-5. Group similar items in the table (e.g., same ADC doses together)
-6. Don't repeat the same information in different sections
-7. Don't use horizontal lines (---) for separation
-8. Keep emoji usage to just the section headers
-9. Format numbers consistently (e.g., use 2 decimal places for percentages)
-10. Sort table data logically (e.g., by dose level or alphabetically)
-11. If the user asks something irrelevant, just say "I'm sorry, I can't answer that question."
-12. But, if it is salutations like Good Morning, Good Afternoon, Good Evening, Good Night, etc., just say "Hello! How can I help you today?"
-13. Be good!
+Please format your response using the exact structure below. Wrap all content inside a container div:
+<div class="llm-response" style="width: 90%;">
+🔍 <strong>Summary</strong>  
+<p>Write a brief summary of 1–2 sentences introducing the key insight or finding.</p>
+📊 <strong>Data Overview</strong>  
+<p>Use appropriate HTML tags to present the data clearly:</p>
+<ul>
+<li>
+  If the data is structured, use a <code>&lt;table&gt;</code> with 
+  <code>&lt;thead&gt;</code>, <code>&lt;tbody&gt;</code>, 
+  <code>&lt;tr&gt;</code>, <code>&lt;th&gt;</code>, and 
+  <code>&lt;td&gt;</code>. Add <code>border="1"</code> and 
+  <code>cellpadding="6"</code> for styling. 
+  Style the header row with 
+  <code>style="background-color: #333; color: white;"</code> 
+  on the <code>&lt;th&gt;</code> or <code>&lt;tr&gt;</code> inside <code>&lt;thead&gt;</code>.
+</li>
+  <li>For lists, use <code>&lt;ul&gt;</code> or <code>&lt;ol&gt;</code> as appropriate.</li>
+  <li>Highlight key values using: <code>&lt;span style="color: red; font-weight: bold"&gt;Important Value&lt;/span&gt;</code>.</li>
+  <li>Wrap any explanatory text in <code>&lt;p&gt;</code> tags.</li>
+  <li>Avoid excessive use of <code>&lt;br&gt;</code> tags. Use semantic structure instead.</li>
+</ul>
+⚡ <strong>Key Findings</strong>  
+<ul>
+  <li>Provide up to three concise, non-redundant bullet points summarizing key insights.</li>
+</ul>
+</div>
 """
     
     response = model.generate_content(prompt)
@@ -589,7 +557,7 @@ async def ask_chatbot(question: UserQuery):
         return {"results": [{"type": "error", "message": f"Error processing your question: {str(e)}"}]}
 
 @app.get("/update-plot")
-async def update_plot(ae: str):
+async def update_plot(ae: str = None, unit: str = None, type: str = None):
     try:
         with driver.session() as session:
             result = session.run(CYPHER_QUERY)
@@ -643,35 +611,35 @@ async def update_plot(ae: str):
             
             processed_data.append(entry)
 
-        # Create plot for selected AE
-        fig, ax = plt.subplots(figsize=(10, 6))
-        plotted_adcs = set()
-        
         # Get unique ADC names for consistent colors
         unique_adcs = list(set(entry['ADC_Name'].lower().strip() for entry in processed_data))
         colors = plt.cm.Set3(np.linspace(0, 1, len(unique_adcs)))
         adc_colors = dict(zip(unique_adcs, colors))
-        
-        for entry in processed_data:
-            auc_data = entry['PK_Parameters'][0] if isinstance(entry['PK_Parameters'], list) and len(entry['PK_Parameters']) > 0 else None
-            ae_data = next((ae_item for ae_item in entry['Adverse_Events'] if ae_item['event'] == ae), None)
+
+        if type == 'cmax':
+            # Create Cmax plot with selected unit
+            fig, ax = plt.subplots(figsize=(10, 6))
+            plotted_adcs = set()
             
-            if auc_data and auc_data.get('value') and ae_data and ae_data['percent']:
+            for entry in processed_data:
                 try:
-                    auc_value = float(auc_data['value'])
-                    percent = float(ae_data['percent'].strip('%'))
-                    normalized_name = entry['ADC_Name'].lower().strip()
-                    color = adc_colors[normalized_name]
-                    label = entry['ADC_Name'] if normalized_name not in plotted_adcs else None
-                    ax.scatter(auc_value, percent, label=label, color=color)
-                    plotted_adcs.add(normalized_name)
-                except (ValueError, TypeError):
+                    dose = float(entry['Dosage'].split()[0])
+                    cmax_data = next((pk for pk in entry['PK_Parameters'] if pk['parameter'] == 'Cmax'), None)
+                    if cmax_data and cmax_data.get('value'):
+                        cmax_value = float(cmax_data['value'])
+                        from_unit = cmax_data.get('unit', 'µg/mL')
+                        cmax_value = convert_unit(cmax_value, from_unit, unit, 'Cmax')
+                        
+                        normalized_name = entry['ADC_Name'].lower().strip()
+                        color = adc_colors[normalized_name]
+                        label = entry['ADC_Name'] if normalized_name not in plotted_adcs else None
+                        ax.scatter(dose, cmax_value, label=label, color=color)
+                        plotted_adcs.add(normalized_name)
+                except (ValueError, TypeError, IndexError):
                     continue
-        
-        if plotted_adcs:
-            ax.set_xlabel('AUC (µg*day/mL)')
-            ax.set_ylabel(f'{ae} (%)')
-            ax.set_title(f'AUC vs {ae}')
+            
+            ax.set_xlabel('Dose (mg/kg)')
+            ax.set_ylabel(f'Cmax ({unit})')
             ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
             plt.tight_layout()
             
@@ -683,8 +651,120 @@ async def update_plot(ae: str):
             plt.close(fig)
             
             return JSONResponse({"plot": plot_base64})
+            
+        elif type == 'auc' and ae:
+            # Create AUC plot with selected unit and AE
+            fig, ax = plt.subplots(figsize=(10, 6))
+            plotted_adcs = set()
+            
+            for entry in processed_data:
+                auc_data = next((pk for pk in entry['PK_Parameters'] if pk['parameter'] == 'AUC'), None)
+                ae_data = next((ae_item for ae_item in entry['Adverse_Events'] if ae_item['event'] == ae), None)
+                
+                if auc_data and auc_data.get('value') and ae_data and ae_data['percent']:
+                    try:
+                        auc_value = float(auc_data['value'])
+                        from_unit = auc_data.get('unit', 'µg*day/mL')
+                        auc_value = convert_unit(auc_value, from_unit, unit, 'AUC')
+                        
+                        percent = float(ae_data['percent'].strip('%'))
+                        normalized_name = entry['ADC_Name'].lower().strip()
+                        color = adc_colors[normalized_name]
+                        label = entry['ADC_Name'] if normalized_name not in plotted_adcs else None
+                        ax.scatter(auc_value, percent, label=label, color=color)
+                        plotted_adcs.add(normalized_name)
+                    except (ValueError, TypeError):
+                        continue
+            
+            if plotted_adcs:
+                ax.set_xlabel(f'AUC ({unit})')
+                ax.set_ylabel(f'{ae} (%)')
+                ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+                plt.tight_layout()
+                
+                # Convert plot to base64
+                buf = io.BytesIO()
+                fig.savefig(buf, format='png', bbox_inches='tight')
+                buf.seek(0)
+                plot_base64 = base64.b64encode(buf.read()).decode('utf-8')
+                plt.close(fig)
+                
+                return JSONResponse({"plot": plot_base64})
+            else:
+                raise HTTPException(status_code=404, detail="No data available for the selected AE")
         else:
-            raise HTTPException(status_code=404, detail="No data available for the selected AE")
+            raise HTTPException(status_code=400, detail="Invalid request parameters")
             
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+def create_auc_plot(data, selected_ae):
+    # Get unique ADC names for consistent colors
+    unique_adcs = list(set(entry['ADC_Name'].lower().strip() for entry in data))
+    colors = plt.cm.Set3(np.linspace(0, 1, len(unique_adcs)))
+    adc_colors = dict(zip(unique_adcs, colors))
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    plotted_adcs = set()
+    
+    for entry in data:
+        auc_data = next((pk for pk in entry['PK_Parameters'] if pk['parameter'] == 'AUC'), None)
+        ae = next((ae for ae in entry['Adverse_Events'] if ae['event'] == selected_ae), None)
+        
+        if auc_data and auc_data.get('value') and ae and ae['percent']:
+            try:
+                auc_value = float(auc_data['value'])
+                # Convert to default unit (µg*day/mL)
+                from_unit = auc_data.get('unit', 'µg*day/mL')
+                auc_value = convert_unit(auc_value, from_unit, 'µg*day/mL', 'AUC')
+                
+                percent = float(ae['percent'].strip('%'))
+                normalized_name = entry['ADC_Name'].lower().strip()
+                color = adc_colors[normalized_name]
+                label = entry['ADC_Name'] if normalized_name not in plotted_adcs else None
+                ax.scatter(auc_value, percent, label=label, color=color)
+                plotted_adcs.add(normalized_name)
+            except (ValueError, TypeError):
+                continue
+    
+    if plotted_adcs:  # Only add plot if we have data
+        ax.set_xlabel('AUC (µg*day/mL)')
+        ax.set_ylabel(f'{selected_ae} (%)')
+        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+        plt.tight_layout()
+        return (f'AUC vs {selected_ae}', plot_to_base64(fig))
+    plt.close(fig)
+    return None
+
+def create_dose_cmax_plot(data):
+    # Get unique ADC names for consistent colors
+    unique_adcs = list(set(entry['ADC_Name'].lower().strip() for entry in data))
+    colors = plt.cm.Set3(np.linspace(0, 1, len(unique_adcs)))
+    adc_colors = dict(zip(unique_adcs, colors))
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    plotted_adcs = set()
+    
+    for entry in data:
+        try:
+            dose = float(entry['Dosage'].split()[0])  # Extract first number from dosage
+            cmax_data = next((pk for pk in entry['PK_Parameters'] if pk['parameter'] == 'Cmax'), None)
+            if cmax_data and cmax_data.get('value'):
+                cmax_value = float(cmax_data['value'])
+                # Convert to default unit (µg/mL)
+                from_unit = cmax_data.get('unit', 'µg/mL')
+                cmax_value = convert_unit(cmax_value, from_unit, 'µg/mL', 'Cmax')
+                
+                normalized_name = entry['ADC_Name'].lower().strip()
+                color = adc_colors[normalized_name]
+                label = entry['ADC_Name'] if normalized_name not in plotted_adcs else None
+                ax.scatter(dose, cmax_value, label=label, color=color)
+                plotted_adcs.add(normalized_name)
+        except (ValueError, TypeError, IndexError):
+            continue
+    
+    ax.set_xlabel('Dose (mg/kg)')
+    ax.set_ylabel('Cmax (µg/mL)')
+    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+    return ('Dose vs Cmax', plot_to_base64(fig))
